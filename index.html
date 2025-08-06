@@ -73,7 +73,7 @@
             </form>
         </section>
         <section class="cost-section">
-            <h2>Booking Cost Calculator</h2>
+            <h2>Booking Costs</h2>
             <form id="costCalcForm" aria-label="Cost Calculator">
                 <div class="form-group">
                     <label for="facility">Facility/Service</label>
@@ -87,24 +87,65 @@
                         <option value="Auditorium">Auditorium/Exhibition Area (per hour)</option>
                         <option value="PC Labs">PC Labs (per hour)</option>
                         <option value="Makerspace">Air/Lab Makerspace (per hour)</option>
-                        <option value="Printing-BW">Printing/Copy Scanning B&W (per page)</option>
-                        <option value="Printing-Colour">Printing/Copy Scanning Colour (per page)</option>
-                        <option value="Binding">Binding</option>
-                        <option value="Laminating">Laminating</option>
-                        <option value="Scanning">Scanning</option>
                     </select>
                 </div>
                 <div class="form-group" id="durationGroup">
-                    <label for="duration">Duration/Quantity</label>
+                    <label for="duration" id="durationLabel">Duration/Quantity</label>
                     <input type="number" id="duration" name="duration" min="1" value="1" required aria-required="true">
                 </div>
-                <div class="form-group" id="extraOptions"></div>
+                <div class="form-group" id="extraOptions">
+                    <label>Extra Services</label>
+                    <div>
+                        <input type="checkbox" id="extraProjector" name="extraProjector" value="Projector">
+                        <label for="extraProjector">Projector (+R100)</label>
+                    </div>
+                    <div>
+                        <input type="checkbox" id="extraCatering" name="extraCatering" value="Catering">
+                        <label for="extraCatering">Catering (+R50 per person)</label>
+                        <input type="number" id="cateringPeople" name="cateringPeople" min="1" value="1" style="width:60px;display:none;">
+                    </div>
+                    <div>
+                        <input type="checkbox" id="extraInternet" name="extraInternet" value="Internet">
+                        <label for="extraInternet">Internet (+R30)</label>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Cost Breakdown:</label>
+                    <div id="costBreakdown" style="font-size:0.95rem;color:#333;"></div>
+                </div>
                 <div class="form-group">
                     <label>Total Cost:</label>
                     <span id="costResult">R0.00</span>
                 </div>
             </form>
+            <div id="bookingSummary" style="margin-top:18px;display:none;"></div>
         </section>
+        <aside class="ondemand-section">
+            <h2>On-Demand Services & Costs</h2>
+            <div class="ondemand-table-wrapper">
+                <table class="ondemand-table" aria-label="On-Demand Services Table">
+                    <thead>
+                        <tr>
+                            <th>Category</th>
+                            <th>Printing B&W (per page)</th>
+                            <th>Printing Colour (per page)</th>
+                            <th>Binding</th>
+                            <th>Laminating</th>
+                            <th>Scanning</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr><td>Corporates</td><td>R2.00</td><td>R6.00</td><td>R43.00</td><td>R44.00</td><td>R5.00</td></tr>
+                        <tr><td>Industrialists</td><td>R2.00</td><td>R6.00</td><td>R43.00</td><td>R44.00</td><td>R5.00</td></tr>
+                        <tr><td>Government</td><td>R2.00</td><td>R6.00</td><td>R43.00</td><td>R44.00</td><td>R5.00</td></tr>
+                        <tr><td>Academia</td><td>R2.00</td><td>R6.00</td><td>R43.00</td><td>R44.00</td><td>R5.00</td></tr>
+                        <tr><td>NGOs/CBOs</td><td>R2.00</td><td>R6.00</td><td>R43.00</td><td>R44.00</td><td>R5.00</td></tr>
+                        <tr><td>General SMMEs</td><td>R2.00</td><td>R6.00</td><td>R43.00</td><td>R44.00</td><td>R5.00</td></tr>
+                        <tr><td>Incubated SMMEs</td><td>R1.50</td><td>R3.00</td><td>R43.00</td><td>R44.00</td><td>R5.00</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </aside>
         <section class="calendar-section">
             <div class="calendar-controls">
                 <input type="text" id="searchInput" placeholder="Search by event or name..." aria-label="Search Bookings">

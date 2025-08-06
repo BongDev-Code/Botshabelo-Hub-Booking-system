@@ -434,34 +434,256 @@ const PRICE_TABLE = {
   },
 };
 
-function updateCostCalculator() {
-  const category = document.getElementById("category").value;
+// Extra service prices
+const EXTRAS = {
+  Projector: 100,
+  Catering: 50, // per person
+  Internet: 30,
+};
+
+// Map facility to duration label
+const DURATION_LABELS = {
+  Office: "Months",
+  "Hot-Desk-Day": "Days",
+  "Hot-Desk-Month": "Months",
+  "Board Room": "Hours",
+  "Meeting Room": "Hours",
+  Auditorium: "Hours",
+  "PC Labs": "Hours",
+  Makerspace: "Hours",
+  "Printing-BW": "Pages",
+  "Printing-Colour": "Pages",
+  Binding: "Units",
+  Laminating: "Units",
+  Scanning: "Units",
+};
+
+function updateDurationLabel() {
   const facility = document.getElementById("facility").value;
-  const duration = parseInt(document.getElementById("duration").value, 10) || 1;
-  let cost = 0;
-  if (category && facility && duration > 0) {
-    const price = PRICE_TABLE[category] && PRICE_TABLE[category][facility];
-    if (typeof price !== "undefined") {
-      cost = price * duration;
-    }
-  }
-  document.getElementById("costResult").textContent = "R" + cost.toFixed(2);
+  const label = DURATION_LABELS[facility] || "Duration/Quantity";
+  document.getElementById("durationLabel").textContent = label;
 }
 
 document
-  .getElementById("category")
-  .addEventListener("change", updateCostCalculator);
-document
   .getElementById("facility")
+  .addEventListener("change", updateDurationLabel);
+
+function updateCostCalculator(syncToBooking = true) {
+  const category = document.getElementById("category").value;
+  const facility = document.getElementById("facility").value;
+  const duration = parseInt(document.getElementById("duration").value, 10) || 1;
+  // Extras
+  const projector = document.getElementById("extraProjector").checked;
+  const catering = document.getElementById("extraCatering").checked;
+  const cateringPeople = catering
+    ? parseInt(document.getElementById("cateringPeople").value, 10) || 1
+    : 0;
+  const internet = document.getElementById("extraInternet").checked;
+  let cost = 0,
+    base = 0,
+    extras = 0;
+  let breakdown = "";
+  if (category && facility && duration > 0) {
+    const price = PRICE_TABLE[category] && PRICE_TABLE[category][facility];
+    if (typeof price !== "undefined") {
+      base = price * duration;
+      breakdown += `Base: R${price.toFixed(2)} x ${duration} = R${base.toFixed(
+        2
+      )}<br>`;
+    }
+    if (projector) {
+      extras += EXTRAS.Projector;
+      breakdown += `Projector: R${EXTRAS.Projector.toFixed(2)}<br>`;
+    }
+    if (catering) {
+      const catCost = EXTRAS.Catering * cateringPeople;
+      extras += catCost;
+      breakdown += `Catering: R${EXTRAS.Catering.toFixed(
+        2
+      )} x ${cateringPeople} = R${catCost.toFixed(2)}<br>`;
+    }
+    if (internet) {
+      extras += EXTRAS.Internet;
+      breakdown += `Internet: R${EXTRAS.Internet.toFixed(2)}<br>`;
+    }
+    cost = base + extras;
+  }
+  document.getElementById("costBreakdown").innerHTML =
+    breakdown || '<span style="color:#888">No selection</span>';
+  document.getElementById("costResult").textContent = "R" + cost.toFixed(2);
+  // Show/hide catering people input
+  document.getElementById("cateringPeople").style.display = catering
+    ? ""
+    : "none";
+  // Sync to booking form if requested
+  if (syncToBooking) {
+    syncCalculatorToBookingForm();
+  }
+  // Show booking summary if all selected
+  showBookingSummary(
+    category,
+    facility,
+    duration,
+    projector,
+    catering,
+    cateringPeople,
+    internet,
+    cost,
+    breakdown
+  );
+  // Disable booking if cost is zero and not Incubated SMMEs
+  const bookBtn = document.querySelector('#bookingForm button[type="submit"]');
+  if (bookBtn) {
+    if (cost === 0 && category !== "Incubated SMMEs") {
+      bookBtn.disabled = true;
+      bookBtn.title = "Please select valid options with a non-zero cost.";
+    } else {
+      bookBtn.disabled = false;
+      bookBtn.title = "";
+    }
+  }
+}
+
+document.getElementById("category").addEventListener("change", function () {
+  updateCostCalculator();
+  syncBookingFormToCalculator();
+});
+document.getElementById("facility").addEventListener("change", function () {
+  updateCostCalculator();
+  syncBookingFormToCalculator();
+});
+document.getElementById("duration").addEventListener("input", function () {
+  updateCostCalculator();
+  syncBookingFormToCalculator();
+});
+document
+  .getElementById("extraProjector")
   .addEventListener("change", updateCostCalculator);
 document
-  .getElementById("duration")
+  .getElementById("extraCatering")
+  .addEventListener("change", updateCostCalculator);
+document
+  .getElementById("cateringPeople")
   .addEventListener("input", updateCostCalculator);
+document
+  .getElementById("extraInternet")
+  .addEventListener("change", updateCostCalculator);
+
+// Sync calculator to booking form
+function syncCalculatorToBookingForm() {
+  // Only update if booking form fields exist
+  const cat = document.getElementById("category").value;
+  const fac = document.getElementById("facility").value;
+  const dur = document.getElementById("duration").value;
+  if (cat) document.getElementById("category").value = cat;
+  if (fac) document.getElementById("event").value = fac;
+  if (dur) document.getElementById("event").setAttribute("data-duration", dur);
+}
+// Sync booking form to calculator
+function syncBookingFormToCalculator() {
+  const cat = document.getElementById("category").value;
+  const fac = document.getElementById("event").value;
+  const dur =
+    document.getElementById("event").getAttribute("data-duration") || 1;
+  if (cat) document.getElementById("category").value = cat;
+  if (fac) document.getElementById("facility").value = fac;
+  if (dur) document.getElementById("duration").value = dur;
+  updateCostCalculator(false);
+}
+
+// Show booking summary
+function showBookingSummary(
+  category,
+  facility,
+  duration,
+  projector,
+  catering,
+  cateringPeople,
+  internet,
+  cost,
+  breakdown
+) {
+  const summary = document.getElementById("bookingSummary");
+  if (category && facility && duration > 0) {
+    summary.style.display = "";
+    summary.innerHTML = `<strong>Booking Summary:</strong><br>
+            Category: ${category}<br>
+            Facility: ${facility}<br>
+            Duration: ${duration} ${DURATION_LABELS[facility] || ""}<br>
+            ${projector ? "Projector: Yes<br>" : ""}
+            ${catering ? `Catering: Yes (${cateringPeople} people)<br>` : ""}
+            ${internet ? "Internet: Yes<br>" : ""}
+            <div style='margin-top:6px;'>${breakdown}</div>
+            <strong>Total Cost: R${cost.toFixed(2)}</strong>`;
+  } else {
+    summary.style.display = "none";
+    summary.innerHTML = "";
+  }
+}
+
+// On booking form submit, validate cost and show summary
+const bookingForm = document.getElementById("bookingForm");
+if (bookingForm) {
+  bookingForm.addEventListener(
+    "submit",
+    function (e) {
+      e.preventDefault();
+      const name = document.getElementById("name").value.trim();
+      const email = document.getElementById("email").value.trim();
+      const event = document.getElementById("event").value.trim();
+      const date = document.getElementById("date").value;
+      const time = document.getElementById("time").value;
+      const reminder = document.getElementById("reminder").value;
+      if (!validateForm(name, email, event, date, time)) return;
+      const bookings = getBookings();
+      // Show loading spinner (simulate async)
+      const submitBtn = this.querySelector("button[type='submit']");
+      const origText = submitBtn.textContent;
+      submitBtn.innerHTML = '<span class="spinner"></span> Saving...';
+      submitBtn.disabled = true;
+      setTimeout(() => {
+        if (editIndex !== null) {
+          bookings[editIndex] = { name, email, event, date, time, reminder };
+          saveBookings(bookings);
+          renderCalendar(getCurrentFilters());
+          renderCalendarGrid();
+          setupReminders();
+          this.reset();
+          submitBtn.textContent = "Book Now";
+          document.getElementById("cancelEdit").style.display = "none";
+          editIndex = null;
+          showToast("Booking updated!", "success");
+        } else {
+          bookings.push({ name, email, event, date, time, reminder });
+          saveBookings(bookings);
+          renderCalendar(getCurrentFilters());
+          renderCalendarGrid();
+          setupReminders();
+          this.reset();
+          submitBtn.textContent = "Book Now";
+          showToast("Booking successful!", "success");
+        }
+        submitBtn.disabled = false;
+      }, 700);
+      // Validate cost
+      updateCostCalculator(false);
+      const costText = document.getElementById("costResult").textContent;
+      const summary = document.getElementById("bookingSummary").innerHTML;
+      showToast(
+        "Booking confirmed!<br>" + summary + "<br>Cost: " + costText,
+        "success"
+      );
+    },
+    true
+  );
+}
 
 // Initial render
 renderCalendar();
 renderCalendarGrid();
 setupReminders();
+updateDurationLabel();
+updateCostCalculator();
 
 // Accessibility: focus toast on show
 const toastContainer = document.getElementById("toastContainer");

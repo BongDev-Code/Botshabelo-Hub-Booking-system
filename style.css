@@ -321,3 +321,84 @@ footer {
 #costCalcForm .form-group {
     margin-bottom: 16px;
 } 
+#extraOptions label {
+    font-weight: 500;
+    margin-right: 8px;
+}
+#extraOptions input[type="number"] {
+    margin-left: 8px;
+    padding: 4px 8px;
+    border-radius: 4px;
+    border: 1px solid #c2c2c2;
+    width: 60px;
+}
+#costBreakdown {
+    margin-top: 4px;
+    background: #f6ffe3;
+    border-radius: 6px;
+    padding: 8px 12px;
+    min-height: 24px;
+}
+#bookingSummary {
+    background: #e0ffe3;
+    border: 1.5px solid #005c1a;
+    border-radius: 8px;
+    padding: 14px 18px;
+    color: #005c1a;
+    font-size: 1.1rem;
+    font-weight: 600;
+    display: none;
+}
+#durationLabel {
+    font-weight: 600;
+} 
+.ondemand-section {
+    background: #fff;
+    border-radius: 16px;
+    box-shadow: 0 4px 24px rgba(0,92,26,0.07);
+    margin: 20px;
+    padding: 32px 28px;
+    min-width: 320px;
+    max-width: 700px;
+    flex: 1 1 350px;
+    animation: fadeIn 1s;
+}
+.ondemand-section h2 {
+    color: #005c1a;
+    margin-bottom: 18px;
+}
+.ondemand-table-wrapper {
+    overflow-x: auto;
+}
+.ondemand-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: #f6ffe3;
+    border-radius: 8px;
+    overflow: hidden;
+    font-size: 1rem;
+}
+.ondemand-table th, .ondemand-table td {
+    border: 1px solid #e0e0e0;
+    padding: 8px 12px;
+    text-align: center;
+}
+.ondemand-table th {
+    background: #e0ffe3;
+    color: #005c1a;
+    font-weight: 700;
+}
+.ondemand-table tr:nth-child(even) {
+    background: #fff;
+}
+@media (max-width: 900px) {
+    .ondemand-section {
+        max-width: 100%;
+        margin: 16px 0;
+        padding: 18px 8px;
+    }
+    .ondemand-table th, .ondemand-table td {
+        font-size: 0.95rem;
+        padding: 6px 4px;
+    }
+} 
