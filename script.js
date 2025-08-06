@@ -323,6 +323,141 @@ document.getElementById("exportCSV").addEventListener("click", function () {
   showToast("Exported bookings to CSV.", "success");
 });
 
+// --- COST CALCULATOR LOGIC ---
+
+// Price table based on the provided image
+const PRICE_TABLE = {
+  Corporates: {
+    Office: 18000,
+    "Hot-Desk-Day": 600,
+    "Hot-Desk-Month": 6000,
+    "Board Room": 1800,
+    "Meeting Room": 1000,
+    Auditorium: 3500,
+    "PC Labs": 1800,
+    Makerspace: 1800,
+    "Printing-BW": 2,
+    "Printing-Colour": 6,
+    Binding: 43,
+    Laminating: 44,
+    Scanning: 5,
+  },
+  Industrialists: {
+    Office: 17000,
+    "Hot-Desk-Day": 600,
+    "Hot-Desk-Month": 6000,
+    "Board Room": 1700,
+    "Meeting Room": 900,
+    Auditorium: 3300,
+    "PC Labs": 1700,
+    Makerspace: 1700,
+    "Printing-BW": 2,
+    "Printing-Colour": 6,
+    Binding: 43,
+    Laminating: 44,
+    Scanning: 5,
+  },
+  Government: {
+    Office: 16000,
+    "Hot-Desk-Day": 500,
+    "Hot-Desk-Month": 5000,
+    "Board Room": 1600,
+    "Meeting Room": 800,
+    Auditorium: 3000,
+    "PC Labs": 1600,
+    Makerspace: 1600,
+    "Printing-BW": 2,
+    "Printing-Colour": 6,
+    Binding: 43,
+    Laminating: 44,
+    Scanning: 5,
+  },
+  Academia: {
+    Office: 15000,
+    "Hot-Desk-Day": 400,
+    "Hot-Desk-Month": 4000,
+    "Board Room": 1500,
+    "Meeting Room": 700,
+    Auditorium: 2500,
+    "PC Labs": 1500,
+    Makerspace: 1500,
+    "Printing-BW": 2,
+    "Printing-Colour": 6,
+    Binding: 43,
+    Laminating: 44,
+    Scanning: 5,
+  },
+  "NGOs/CBOs": {
+    Office: 12000,
+    "Hot-Desk-Day": 300,
+    "Hot-Desk-Month": 3000,
+    "Board Room": 1200,
+    "Meeting Room": 600,
+    Auditorium: 2000,
+    "PC Labs": 1200,
+    Makerspace: 1200,
+    "Printing-BW": 2,
+    "Printing-Colour": 6,
+    Binding: 43,
+    Laminating: 44,
+    Scanning: 5,
+  },
+  "General SMMEs": {
+    Office: 8000,
+    "Hot-Desk-Day": 200,
+    "Hot-Desk-Month": 2000,
+    "Board Room": 800,
+    "Meeting Room": 400,
+    Auditorium: 1500,
+    "PC Labs": 800,
+    Makerspace: 800,
+    "Printing-BW": 2,
+    "Printing-Colour": 6,
+    Binding: 43,
+    Laminating: 44,
+    Scanning: 5,
+  },
+  "Incubated SMMEs": {
+    Office: 0,
+    "Hot-Desk-Day": 0,
+    "Hot-Desk-Month": 0,
+    "Board Room": 0,
+    "Meeting Room": 0,
+    Auditorium: 0,
+    "PC Labs": 0,
+    Makerspace: 0,
+    "Printing-BW": 1.5,
+    "Printing-Colour": 3,
+    Binding: 43,
+    Laminating: 44,
+    Scanning: 5,
+  },
+};
+
+function updateCostCalculator() {
+  const category = document.getElementById("category").value;
+  const facility = document.getElementById("facility").value;
+  const duration = parseInt(document.getElementById("duration").value, 10) || 1;
+  let cost = 0;
+  if (category && facility && duration > 0) {
+    const price = PRICE_TABLE[category] && PRICE_TABLE[category][facility];
+    if (typeof price !== "undefined") {
+      cost = price * duration;
+    }
+  }
+  document.getElementById("costResult").textContent = "R" + cost.toFixed(2);
+}
+
+document
+  .getElementById("category")
+  .addEventListener("change", updateCostCalculator);
+document
+  .getElementById("facility")
+  .addEventListener("change", updateCostCalculator);
+document
+  .getElementById("duration")
+  .addEventListener("input", updateCostCalculator);
+
 // Initial render
 renderCalendar();
 renderCalendarGrid();

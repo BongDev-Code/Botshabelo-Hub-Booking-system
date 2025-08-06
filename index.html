@@ -29,6 +29,19 @@
             <h1>Book an Event</h1>
             <form id="bookingForm" aria-label="Booking Form">
                 <div class="form-group">
+                    <label for="category">Category</label>
+                    <select id="category" name="category" required aria-required="true">
+                        <option value="">Select Category</option>
+                        <option value="Corporates">Corporates</option>
+                        <option value="Industrialists">Industrialists</option>
+                        <option value="Government">Government</option>
+                        <option value="Academia">Academia</option>
+                        <option value="NGOs/CBOs">NGOs/CBOs</option>
+                        <option value="General SMMEs">General SMMEs</option>
+                        <option value="Incubated SMMEs">Incubated SMMEs</option>
+                    </select>
+                </div>
+                <div class="form-group">
                     <label for="name">Name</label>
                     <input type="text" id="name" name="name" required aria-required="true">
                 </div>
@@ -57,6 +70,39 @@
                 </div>
                 <button type="submit" class="btn-primary">Book Now</button>
                 <button type="button" id="cancelEdit" class="btn-cancel" style="display:none;">Cancel</button>
+            </form>
+        </section>
+        <section class="cost-section">
+            <h2>Booking Cost Calculator</h2>
+            <form id="costCalcForm" aria-label="Cost Calculator">
+                <div class="form-group">
+                    <label for="facility">Facility/Service</label>
+                    <select id="facility" name="facility" required aria-required="true">
+                        <option value="">Select Facility/Service</option>
+                        <option value="Office">Office (per month)</option>
+                        <option value="Hot-Desk-Day">Hot-Desk (per day)</option>
+                        <option value="Hot-Desk-Month">Hot-Desk (per month)</option>
+                        <option value="Board Room">Board Room (per hour)</option>
+                        <option value="Meeting Room">Meeting Room (per hour)</option>
+                        <option value="Auditorium">Auditorium/Exhibition Area (per hour)</option>
+                        <option value="PC Labs">PC Labs (per hour)</option>
+                        <option value="Makerspace">Air/Lab Makerspace (per hour)</option>
+                        <option value="Printing-BW">Printing/Copy Scanning B&W (per page)</option>
+                        <option value="Printing-Colour">Printing/Copy Scanning Colour (per page)</option>
+                        <option value="Binding">Binding</option>
+                        <option value="Laminating">Laminating</option>
+                        <option value="Scanning">Scanning</option>
+                    </select>
+                </div>
+                <div class="form-group" id="durationGroup">
+                    <label for="duration">Duration/Quantity</label>
+                    <input type="number" id="duration" name="duration" min="1" value="1" required aria-required="true">
+                </div>
+                <div class="form-group" id="extraOptions"></div>
+                <div class="form-group">
+                    <label>Total Cost:</label>
+                    <span id="costResult">R0.00</span>
+                </div>
             </form>
         </section>
         <section class="calendar-section">
