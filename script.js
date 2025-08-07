@@ -36,6 +36,7 @@ function saveBookings(bookings) {
 function renderCalendar(filter = {}) {
   const calendar = document.getElementById("calendar");
   let bookings = getBookings();
+
   // Filter by search
   if (filter.search) {
     const s = filter.search.toLowerCase();
@@ -63,6 +64,9 @@ function renderCalendar(filter = {}) {
             <strong>${booking.event}</strong><br>
             ${formatDate(booking.date)} at ${formatTime(booking.time)}<br>
             Booked by: ${booking.name} (${booking.email})<br>
+            People: ${booking.people || 1}, Duration: ${
+      booking.duration || 1
+    } hour(s)<br>
             Reminder: ${
               booking.reminder === "1hour" ? "1 hour" : "1 day"
             } before<br>
@@ -89,6 +93,8 @@ function renderCalendar(filter = {}) {
 // Render a simple calendar grid for the current month
 function renderCalendarGrid() {
   const grid = document.getElementById("calendarGrid");
+  if (!grid) return; // Safety check
+
   grid.innerHTML = "";
   const now = new Date();
   const year = now.getFullYear();
@@ -98,6 +104,7 @@ function renderCalendarGrid() {
   const startDay = firstDay.getDay();
   const daysInMonth = lastDay.getDate();
   const bookings = getBookings();
+
   // Header
   const days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
   const header = document.createElement("div");
@@ -109,19 +116,23 @@ function renderCalendarGrid() {
     header.appendChild(cell);
   });
   grid.appendChild(header);
+
   // Grid
   const gridDiv = document.createElement("div");
   gridDiv.className = "calendar-grid";
+
   // Empty cells before first day
   for (let i = 0; i < startDay; i++) {
     const cell = document.createElement("div");
     cell.className = "calendar-cell";
     gridDiv.appendChild(cell);
   }
+
   for (let d = 1; d <= daysInMonth; d++) {
     const cell = document.createElement("div");
     cell.className = "calendar-cell";
     cell.innerHTML = `<span class="cell-date">${d}</span>`;
+
     // Show bookings for this day
     const dateStr = `${year}-${String(month + 1).padStart(2, "0")}-${String(
       d
@@ -188,6 +199,8 @@ function startEditBooking(idx) {
   document.getElementById("date").value = booking.date;
   document.getElementById("time").value = booking.time;
   document.getElementById("reminder").value = booking.reminder || "1day";
+  document.getElementById("people").value = booking.people || 1;
+  document.getElementById("duration").value = booking.duration || 1;
   editIndex = idx;
   document.querySelector("#bookingForm button[type='submit']").textContent =
     "Update Booking";
@@ -212,13 +225,17 @@ function deleteBooking(idx) {
   showToast("Booking deleted.", "success");
 }
 
-document.getElementById("cancelEdit").addEventListener("click", function () {
-  document.getElementById("bookingForm").reset();
-  document.querySelector("#bookingForm button[type='submit']").textContent =
-    "Book Now";
-  this.style.display = "none";
-  editIndex = null;
-});
+// Cancel edit handler
+const cancelEditBtn = document.getElementById("cancelEdit");
+if (cancelEditBtn) {
+  cancelEditBtn.addEventListener("click", function () {
+    document.getElementById("bookingForm").reset();
+    document.querySelector("#bookingForm button[type='submit']").textContent =
+      "Book Now";
+    this.style.display = "none";
+    editIndex = null;
+  });
+}
 
 function validateForm(name, email, event, date, time) {
   if (!name || !email || !event || !date || !time) {
@@ -241,196 +258,205 @@ function validateForm(name, email, event, date, time) {
   return true;
 }
 
-document.getElementById("bookingForm").addEventListener("submit", function (e) {
-  e.preventDefault();
-  const name = document.getElementById("name").value.trim();
-  const email = document.getElementById("email").value.trim();
-  const event = document.getElementById("event").value.trim();
-  const date = document.getElementById("date").value;
-  const time = document.getElementById("time").value;
-  const reminder = document.getElementById("reminder").value;
-  if (!validateForm(name, email, event, date, time)) return;
-  const bookings = getBookings();
-  // Show loading spinner (simulate async)
-  const submitBtn = this.querySelector("button[type='submit']");
-  const origText = submitBtn.textContent;
-  submitBtn.innerHTML = '<span class="spinner"></span> Saving...';
-  submitBtn.disabled = true;
-  setTimeout(() => {
-    if (editIndex !== null) {
-      bookings[editIndex] = { name, email, event, date, time, reminder };
-      saveBookings(bookings);
-      renderCalendar(getCurrentFilters());
-      renderCalendarGrid();
-      setupReminders();
-      this.reset();
-      submitBtn.textContent = "Book Now";
-      document.getElementById("cancelEdit").style.display = "none";
-      editIndex = null;
-      showToast("Booking updated!", "success");
-    } else {
-      bookings.push({ name, email, event, date, time, reminder });
-      saveBookings(bookings);
-      renderCalendar(getCurrentFilters());
-      renderCalendarGrid();
-      setupReminders();
-      this.reset();
-      submitBtn.textContent = "Book Now";
-      showToast("Booking successful!", "success");
-    }
-    submitBtn.disabled = false;
-  }, 700);
+// Single booking form event listener
+document.addEventListener("DOMContentLoaded", function () {
+  const bookingForm = document.getElementById("bookingForm");
+
+  if (bookingForm) {
+    bookingForm.addEventListener("submit", function (e) {
+      e.preventDefault();
+
+      console.log("Form submitted!"); // Debug log
+
+      const name = document.getElementById("name").value.trim();
+      const email = document.getElementById("email").value.trim();
+      const event = document.getElementById("event").value.trim();
+      const date = document.getElementById("date").value;
+      const time = document.getElementById("time").value;
+      const reminder = document.getElementById("reminder").value;
+      const people = parseInt(document.getElementById("people").value, 10) || 1;
+      const duration =
+        parseInt(document.getElementById("duration").value, 10) || 1;
+
+      // Correct validation call
+      if (!validateForm(name, email, event, date, time)) return;
+
+      const bookings = getBookings();
+      const submitBtn = this.querySelector("button[type='submit']");
+      const origText = submitBtn.textContent;
+
+      submitBtn.innerHTML = '<span class="spinner"></span> Saving...';
+      submitBtn.disabled = true;
+
+      setTimeout(() => {
+        const booking = {
+          name,
+          email,
+          event,
+          date,
+          time,
+          reminder,
+          people,
+          duration,
+        };
+
+        if (editIndex !== null) {
+          bookings[editIndex] = booking;
+          editIndex = null;
+          document.getElementById("cancelEdit").style.display = "none";
+          showToast("Booking updated!", "success");
+        } else {
+          bookings.push(booking);
+          showToast("Booking successful!", "success");
+        }
+
+        saveBookings(bookings);
+        renderCalendar(getCurrentFilters());
+        renderCalendarGrid();
+        setupReminders();
+
+        this.reset();
+        submitBtn.textContent = "Book Now";
+        submitBtn.disabled = false;
+      }, 700);
+    });
+  }
 });
 
-// Filter/search
+// Filter/search functions
 function getCurrentFilters() {
   return {
-    search: document.getElementById("searchInput").value.trim(),
-    date: document.getElementById("filterDate").value,
+    search: document.getElementById("searchInput")?.value.trim() || "",
+    date: document.getElementById("filterDate")?.value || "",
   };
 }
-document.getElementById("searchInput").addEventListener("input", function () {
-  renderCalendar(getCurrentFilters());
-});
-document.getElementById("filterDate").addEventListener("change", function () {
-  renderCalendar(getCurrentFilters());
-});
 
-document.getElementById("exportCSV").addEventListener("click", function () {
-  const bookings = getBookings();
-  if (!bookings.length) {
-    showToast("No bookings to export.", "error");
-    return;
+// Search and filter event listeners
+document.addEventListener("DOMContentLoaded", function () {
+  const searchInput = document.getElementById("searchInput");
+  const filterDate = document.getElementById("filterDate");
+
+  if (searchInput) {
+    searchInput.addEventListener("input", function () {
+      renderCalendar(getCurrentFilters());
+    });
   }
-  const csvRows = ["Name,Email,Event,Date,Time,Reminder"];
-  bookings.forEach((b) => {
-    csvRows.push(
-      `"${b.name}","${b.email}","${b.event}","${b.date}","${b.time}","${
-        b.reminder === "1hour" ? "1 hour" : "1 day"
-      }"`
-    );
-  });
-  const csvContent = csvRows.join("\n");
-  const blob = new Blob([csvContent], { type: "text/csv" });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = "bookings.csv";
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-  URL.revokeObjectURL(url);
-  showToast("Exported bookings to CSV.", "success");
+
+  if (filterDate) {
+    filterDate.addEventListener("change", function () {
+      renderCalendar(getCurrentFilters());
+    });
+  }
 });
 
-// --- COST CALCULATOR LOGIC ---
+// CSV export
+document.addEventListener("DOMContentLoaded", function () {
+  const exportBtn = document.getElementById("exportCSV");
+
+  if (exportBtn) {
+    exportBtn.addEventListener("click", function () {
+      const bookings = getBookings();
+      if (!bookings.length) {
+        showToast("No bookings to export.", "error");
+        return;
+      }
+      const csvRows = ["Name,Email,Event,Date,Time,Reminder,People,Duration"];
+      bookings.forEach((b) => {
+        csvRows.push(
+          `"${b.name}","${b.email}","${b.event}","${b.date}","${b.time}","${
+            b.reminder === "1hour" ? "1 hour" : "1 day"
+          }","${b.people || 1}","${b.duration || 1}"` // Added missing commas
+        );
+      });
+      const csvContent = csvRows.join("\n");
+      const blob = new Blob([csvContent], { type: "text/csv" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "bookings.csv";
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      showToast("Exported bookings to CSV.", "success");
+    });
+  }
+});
+
+// Cost calculator and other functions remain the same...
+// (Include all your cost calculator code here - it looks correct)
 
 // Price table based on the provided image
 const PRICE_TABLE = {
   Corporates: {
-    Office: 18000,
-    "Hot-Desk-Day": 600,
-    "Hot-Desk-Month": 6000,
-    "Board Room": 1800,
-    "Meeting Room": 1000,
-    Auditorium: 3500,
-    "PC Labs": 1800,
-    Makerspace: 1800,
-    "Printing-BW": 2,
-    "Printing-Colour": 6,
-    Binding: 43,
-    Laminating: 44,
-    Scanning: 5,
+    Office: 8000,
+    "Hot-Desk-Day": 90,
+    "Hot-Desk-Month": 1600,
+    "Board Room": 70,
+    "Meeting Room": 35,
+    Auditorium: 50,
+    "PC Labs": 100,
+    Makerspace: 180,
   },
   Industrialists: {
-    Office: 17000,
-    "Hot-Desk-Day": 600,
-    "Hot-Desk-Month": 6000,
-    "Board Room": 1700,
-    "Meeting Room": 900,
+    Office: 7000,
+    "Hot-Desk-Day": 80,
+    "Hot-Desk-Month": 1500,
+    "Board Room": 60,
+    "Meeting Room": 30,
     Auditorium: 3300,
-    "PC Labs": 1700,
-    Makerspace: 1700,
-    "Printing-BW": 2,
-    "Printing-Colour": 6,
-    Binding: 43,
-    Laminating: 44,
-    Scanning: 5,
+    "PC Labs": 90,
+    Makerspace: 170,
   },
   Government: {
-    Office: 16000,
-    "Hot-Desk-Day": 500,
-    "Hot-Desk-Month": 5000,
-    "Board Room": 1600,
-    "Meeting Room": 800,
-    Auditorium: 3000,
-    "PC Labs": 1600,
-    Makerspace: 1600,
-    "Printing-BW": 2,
-    "Printing-Colour": 6,
-    Binding: 43,
-    Laminating: 44,
-    Scanning: 5,
+    Office: 6000,
+    "Hot-Desk-Day": 70,
+    "Hot-Desk-Month": 1400,
+    "Board Room": 50,
+    "Meeting Room": 25,
+    Auditorium: 30,
+    "PC Labs": 80,
+    Makerspace: 160,
   },
   Academia: {
-    Office: 15000,
-    "Hot-Desk-Day": 400,
-    "Hot-Desk-Month": 4000,
-    "Board Room": 1500,
-    "Meeting Room": 700,
-    Auditorium: 2500,
-    "PC Labs": 1500,
-    Makerspace: 1500,
-    "Printing-BW": 2,
-    "Printing-Colour": 6,
-    Binding: 43,
-    Laminating: 44,
-    Scanning: 5,
+    Office: 4000,
+    "Hot-Desk-Day": 60,
+    "Hot-Desk-Month": 1300,
+    "Board Room": 40,
+    "Meeting Room": 20,
+    Auditorium: 25,
+    "PC Labs": 80,
+    Makerspace: 150,
   },
   "NGOs/CBOs": {
-    Office: 12000,
-    "Hot-Desk-Day": 300,
-    "Hot-Desk-Month": 3000,
-    "Board Room": 1200,
-    "Meeting Room": 600,
-    Auditorium: 2000,
-    "PC Labs": 1200,
-    Makerspace: 1200,
-    "Printing-BW": 2,
-    "Printing-Colour": 6,
-    Binding: 43,
-    Laminating: 44,
-    Scanning: 5,
+    Office: 3000,
+    "Hot-Desk-Day": 50,
+    "Hot-Desk-Month": 1000,
+    "Board Room": 30,
+    "Meeting Room": 15,
+    Auditorium: 20,
+    "PC Labs": 60,
+    Makerspace: 120,
   },
   "General SMMEs": {
-    Office: 8000,
-    "Hot-Desk-Day": 200,
-    "Hot-Desk-Month": 2000,
-    "Board Room": 800,
-    "Meeting Room": 400,
-    Auditorium: 1500,
-    "PC Labs": 800,
-    Makerspace: 800,
-    "Printing-BW": 2,
-    "Printing-Colour": 6,
-    Binding: 43,
-    Laminating: 44,
-    Scanning: 5,
+    Office: 2500,
+    "Hot-Desk-Day": 40,
+    "Hot-Desk-Month": 1000,
+    "Board Room": 30,
+    "Meeting Room": 15,
+    Auditorium: 20,
+    "PC Labs": 60,
+    Makerspace: 100,
   },
   "Incubated SMMEs": {
-    Office: 0,
+    Office: 1500,
     "Hot-Desk-Day": 0,
     "Hot-Desk-Month": 0,
     "Board Room": 0,
     "Meeting Room": 0,
-    Auditorium: 0,
+    Auditorium: 10,
     "PC Labs": 0,
     Makerspace: 0,
-    "Printing-BW": 1.5,
-    "Printing-Colour": 3,
-    Binding: 43,
-    Laminating: 44,
-    Scanning: 5,
   },
 };
 
@@ -451,17 +477,29 @@ const DURATION_LABELS = {
   Auditorium: "Hours",
   "PC Labs": "Hours",
   Makerspace: "Hours",
-  "Printing-BW": "Pages",
-  "Printing-Colour": "Pages",
-  Binding: "Units",
-  Laminating: "Units",
-  Scanning: "Units",
 };
 
 function updateDurationLabel() {
   const facility = document.getElementById("facility").value;
   const label = DURATION_LABELS[facility] || "Duration/Quantity";
   document.getElementById("durationLabel").textContent = label;
+
+  // Show number of people input for per-person facilities
+  const peopleInput = document.getElementById("people");
+  const peopleLabel = document.querySelector("label[for='people']");
+  const perPersonFacilities = [
+    "Board Room",
+    "Meeting Room",
+    "PC Labs",
+    "Makerspace",
+  ];
+  if (perPersonFacilities.includes(facility)) {
+    peopleInput.style.display = "";
+    peopleLabel.style.display = "";
+  } else {
+    peopleInput.style.display = "none";
+    peopleLabel.style.display = "none";
+  }
 }
 
 document
@@ -472,6 +510,16 @@ function updateCostCalculator(syncToBooking = true) {
   const category = document.getElementById("category").value;
   const facility = document.getElementById("facility").value;
   const duration = parseInt(document.getElementById("duration").value, 10) || 1;
+  const people = parseInt(document.getElementById("people").value, 10) || 1;
+
+  // Per-person facilities logic
+  const perPersonFacilities = [
+    "Board Room",
+    "Meeting Room",
+    "PC Labs",
+    "Makerspace",
+  ];
+
   // Extras
   const projector = document.getElementById("extraProjector").checked;
   const catering = document.getElementById("extraCatering").checked;
@@ -479,18 +527,29 @@ function updateCostCalculator(syncToBooking = true) {
     ? parseInt(document.getElementById("cateringPeople").value, 10) || 1
     : 0;
   const internet = document.getElementById("extraInternet").checked;
+
   let cost = 0,
     base = 0,
     extras = 0;
   let breakdown = "";
+
   if (category && facility && duration > 0) {
     const price = PRICE_TABLE[category] && PRICE_TABLE[category][facility];
     if (typeof price !== "undefined") {
-      base = price * duration;
-      breakdown += `Base: R${price.toFixed(2)} x ${duration} = R${base.toFixed(
-        2
-      )}<br>`;
+      // Your per-person per-hour calculation logic
+      if (perPersonFacilities.includes(facility)) {
+        base = price * duration * people;
+        breakdown += `Base: R${price.toFixed(
+          2
+        )} x ${people} people x ${duration} hour(s) = R${base.toFixed(2)}<br>`;
+      } else {
+        base = price * duration;
+        breakdown += `Base: R${price.toFixed(
+          2
+        )} x ${duration} = R${base.toFixed(2)}<br>`;
+      }
     }
+
     if (projector) {
       extras += EXTRAS.Projector;
       breakdown += `Projector: R${EXTRAS.Projector.toFixed(2)}<br>`;
@@ -508,22 +567,27 @@ function updateCostCalculator(syncToBooking = true) {
     }
     cost = base + extras;
   }
+
   document.getElementById("costBreakdown").innerHTML =
     breakdown || '<span style="color:#888">No selection</span>';
   document.getElementById("costResult").textContent = "R" + cost.toFixed(2);
+
   // Show/hide catering people input
   document.getElementById("cateringPeople").style.display = catering
     ? ""
     : "none";
+
   // Sync to booking form if requested
   if (syncToBooking) {
     syncCalculatorToBookingForm();
   }
-  // Show booking summary if all selected
+
+  // Show booking summary
   showBookingSummary(
     category,
     facility,
     duration,
+    people,
     projector,
     catering,
     cateringPeople,
@@ -531,19 +595,9 @@ function updateCostCalculator(syncToBooking = true) {
     cost,
     breakdown
   );
-  // Disable booking if cost is zero and not Incubated SMMEs
-  const bookBtn = document.querySelector('#bookingForm button[type="submit"]');
-  if (bookBtn) {
-    if (cost === 0 && category !== "Incubated SMMEs") {
-      bookBtn.disabled = true;
-      bookBtn.title = "Please select valid options with a non-zero cost.";
-    } else {
-      bookBtn.disabled = false;
-      bookBtn.title = "";
-    }
-  }
 }
 
+// Event listeners for cost calculator
 document.getElementById("category").addEventListener("change", function () {
   updateCostCalculator();
   syncBookingFormToCalculator();
@@ -568,10 +622,12 @@ document
 document
   .getElementById("extraInternet")
   .addEventListener("change", updateCostCalculator);
+document
+  .getElementById("people")
+  .addEventListener("input", updateCostCalculator);
 
 // Sync calculator to booking form
 function syncCalculatorToBookingForm() {
-  // Only update if booking form fields exist
   const cat = document.getElementById("category").value;
   const fac = document.getElementById("facility").value;
   const dur = document.getElementById("duration").value;
@@ -579,6 +635,7 @@ function syncCalculatorToBookingForm() {
   if (fac) document.getElementById("event").value = fac;
   if (dur) document.getElementById("event").setAttribute("data-duration", dur);
 }
+
 // Sync booking form to calculator
 function syncBookingFormToCalculator() {
   const cat = document.getElementById("category").value;
@@ -596,6 +653,7 @@ function showBookingSummary(
   category,
   facility,
   duration,
+  people,
   projector,
   catering,
   cateringPeople,
@@ -604,12 +662,24 @@ function showBookingSummary(
   breakdown
 ) {
   const summary = document.getElementById("bookingSummary");
+  const perPersonFacilities = [
+    "Board Room",
+    "Meeting Room",
+    "PC Labs",
+    "Makerspace",
+  ];
+
   if (category && facility && duration > 0) {
     summary.style.display = "";
     summary.innerHTML = `<strong>Booking Summary:</strong><br>
             Category: ${category}<br>
             Facility: ${facility}<br>
             Duration: ${duration} ${DURATION_LABELS[facility] || ""}<br>
+            ${
+              perPersonFacilities.includes(facility)
+                ? `People: ${people}<br>`
+                : ""
+            }
             ${projector ? "Projector: Yes<br>" : ""}
             ${catering ? `Catering: Yes (${cateringPeople} people)<br>` : ""}
             ${internet ? "Internet: Yes<br>" : ""}
@@ -621,82 +691,25 @@ function showBookingSummary(
   }
 }
 
-// On booking form submit, validate cost and show summary
-const bookingForm = document.getElementById("bookingForm");
-if (bookingForm) {
-  bookingForm.addEventListener(
-    "submit",
-    function (e) {
-      e.preventDefault();
-      const name = document.getElementById("name").value.trim();
-      const email = document.getElementById("email").value.trim();
-      const event = document.getElementById("event").value.trim();
-      const date = document.getElementById("date").value;
-      const time = document.getElementById("time").value;
-      const reminder = document.getElementById("reminder").value;
-      if (!validateForm(name, email, event, date, time)) return;
-      const bookings = getBookings();
-      // Show loading spinner (simulate async)
-      const submitBtn = this.querySelector("button[type='submit']");
-      const origText = submitBtn.textContent;
-      submitBtn.innerHTML = '<span class="spinner"></span> Saving...';
-      submitBtn.disabled = true;
-      setTimeout(() => {
-        if (editIndex !== null) {
-          bookings[editIndex] = { name, email, event, date, time, reminder };
-          saveBookings(bookings);
-          renderCalendar(getCurrentFilters());
-          renderCalendarGrid();
-          setupReminders();
-          this.reset();
-          submitBtn.textContent = "Book Now";
-          document.getElementById("cancelEdit").style.display = "none";
-          editIndex = null;
-          showToast("Booking updated!", "success");
-        } else {
-          bookings.push({ name, email, event, date, time, reminder });
-          saveBookings(bookings);
-          renderCalendar(getCurrentFilters());
-          renderCalendarGrid();
-          setupReminders();
-          this.reset();
-          submitBtn.textContent = "Book Now";
-          showToast("Booking successful!", "success");
-        }
-        submitBtn.disabled = false;
-      }, 700);
-      // Validate cost
-      updateCostCalculator(false);
-      const costText = document.getElementById("costResult").textContent;
-      const summary = document.getElementById("bookingSummary").innerHTML;
-      showToast(
-        "Booking confirmed!<br>" + summary + "<br>Cost: " + costText,
-        "success"
-      );
-    },
-    true
-  );
-}
-
 // Initial render
-renderCalendar();
-renderCalendarGrid();
-setupReminders();
-updateDurationLabel();
-updateCostCalculator();
+document.addEventListener("DOMContentLoaded", function () {
+  renderCalendar();
+  renderCalendarGrid();
+  setupReminders();
+  updateDurationLabel();
+  updateCostCalculator();
 
-// Accessibility: focus toast on show
-const toastContainer = document.getElementById("toastContainer");
-const observer = new MutationObserver(() => {
-  if (toastContainer.firstChild)
-    toastContainer.firstChild.focus && toastContainer.firstChild.focus();
+  // Accessibility: focus toast on show
+  const toastContainer = document.getElementById("toastContainer");
+  const observer = new MutationObserver(() => {
+    if (toastContainer.firstChild)
+      toastContainer.firstChild.focus && toastContainer.firstChild.focus();
+  });
+  observer.observe(toastContainer, { childList: true });
 });
-observer.observe(toastContainer, { childList: true });
 
 // Spinner style
 const style = document.createElement("style");
 style.innerHTML = `.spinner { display: inline-block; width: 18px; height: 18px; border: 3px solid #fff; border-top: 3px solid #005c1a; border-radius: 50%; animation: spin 0.7s linear infinite; vertical-align: middle; margin-right: 8px; }
 @keyframes spin { 0% { transform: rotate(0deg);} 100% { transform: rotate(360deg);} }`;
 document.head.appendChild(style);
-
-// For future: backend/auth integration can be added here
